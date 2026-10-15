@@ -22,10 +22,35 @@ jobs:
     steps:
       - name: check out project
         uses: actions/checkout@v4
+      - name: cache web export templates
+        id: godot-templates
+        uses: actions/cache@v4
+        with:
+          path: ~/.local/share/godot/export_templates/4.7.2.stable
+          key: godot-web-templates-4.7.2-v1
+      - name: install web export templates
+        if: steps.godot-templates.outputs.cache-hit != 'true'
+        run: |
+          python3 -m pip install --quiet remotezip
+          python3 - <<'PY'
+          from pathlib import Path
+          from remotezip import RemoteZip
+
+          url = "https://github.com/godotengine/godot/releases/download/4.7.2-stable/Godot_v4.7.2-stable_export_templates.tpz"
+          destination = Path.home() / ".local/share/godot/export_templates/4.7.2.stable"
+          destination.mkdir(parents=True, exist_ok=True)
+          templates = (
+              "templates/web_nothreads_debug.zip",
+              "templates/web_nothreads_release.zip",
+          )
+          with RemoteZip(url) as archive:
+              for name in templates:
+                  (destination / Path(name).name).write_bytes(archive.read(name))
+          PY
       - name: export web game
         run: |
           mkdir -p build/web
-          godot --headless --verbose --export-release Web build/web/index.html
+          godot --headless --export-release Web build/web/index.html
       - name: upload pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
