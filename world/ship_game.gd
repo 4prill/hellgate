@@ -57,6 +57,8 @@ var cutscene_progress: ColorRect
 var cutscene_fade: ColorRect
 var cutscene_camera: Camera3D
 var cutscene_sting: AudioStreamPlayer
+var ui_audio: AudioStreamPlayer
+const UI_CLICK := preload("res://audio/third_party/knife_swing.wav")
 var cutscene_credits: ColorRect
 var cutscene_credits_text: Label
 var cutscene_kind := ""
@@ -654,6 +656,31 @@ func _build_audio() -> void:
 	combat_player.volume_db = -50.0
 	combat_player.bus = "Music"
 	add_child(combat_player)
+	# UI click ensures Web Audio unlocks on first user gesture (browsers block autoplay).
+	ui_audio = AudioStreamPlayer.new()
+	ui_audio.stream = UI_CLICK
+	ui_audio.volume_db = -14.0
+	ui_audio.bus = "SFX"
+	add_child(ui_audio)
+
+func _play_ui_click() -> void:
+	if is_instance_valid(ui_audio):
+		ui_audio.play()
+
+func _exit_game() -> void:
+	# get_tree().quit() does nothing on Web; return to the main menu instead.
+	if OS.has_feature("web"):
+		if is_instance_valid(director):
+			director.stop()
+		if is_instance_valid(horror) and horror.has_method("stop"):
+			horror.stop()
+		if is_instance_valid(cutscene_sting):
+			cutscene_sting.stop()
+		get_tree().paused = true
+		Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+		_show_menu("intro")
+		return
+	get_tree().quit()
 
 func _build_mission_ui() -> void:
 	mission_layer = CanvasLayer.new()
@@ -785,13 +812,13 @@ func _show_menu(kind: String) -> void:
 		_add_menu_button(column, "SETTINGS", func(): settings_return = "pause"; _show_menu("settings"))
 		_add_menu_button(column, "HOW TO PLAY", func(): controls_return = "pause"; _show_menu("controls"))
 		_add_menu_button(column, "RESTART RUN", _restart_game)
-		_add_menu_button(column, "EXIT GAME", get_tree().quit)
+		_add_menu_button(column, "EXIT GAME", _exit_game)
 	elif kind == "controls":
 		_add_menu_button(column, "BACK", func(): _show_menu(controls_return), true)
 	else:
 		_add_menu_label(column, "KILLS  %d" % Global.enemies_killed, 22, accent)
 		_add_menu_button(column, "PLAY AGAIN", _restart_game, true)
-		_add_menu_button(column, "EXIT GAME", get_tree().quit)
+		_add_menu_button(column, "EXIT GAME", _exit_game)
 
 func _set_mission_chrome(visible_now: bool) -> void:
 	for control in mission_chrome:
@@ -830,7 +857,7 @@ func _build_intro_menu() -> void:
 	_add_menu_button(column, "NEW GAME", _start_game, true)
 	_add_menu_button(column, "SETTINGS", func(): settings_return = "intro"; _show_menu("settings"))
 	_add_menu_button(column, "HOW TO PLAY", func(): controls_return = "intro"; _show_menu("controls"))
-	_add_menu_button(column, "EXIT GAME", get_tree().quit)
+	_add_menu_button(column, "EXIT GAME", _exit_game)
 	var dossier := PanelContainer.new()
 	dossier.anchor_left = 0.66
 	dossier.anchor_top = 0.24
@@ -988,6 +1015,7 @@ func _add_menu_button(parent: VBoxContainer, title: String, action: Callable, pr
 	pressed.bg_color = AMBER
 	button.add_theme_stylebox_override("pressed", pressed)
 	button.pressed.connect(action)
+	button.pressed.connect(_play_ui_click)
 	parent.add_child(button)
 	button.mouse_entered.connect(button.grab_focus)
 	if primary:

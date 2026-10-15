@@ -44,6 +44,9 @@ func apply(game: Node) -> void:
 	game.player.sensitivity = values.sensitivity
 	var environment: Environment = game.get_node("WorldEnvironment").environment
 	environment.tonemap_exposure = values.brightness
+	# Web builds run inside the browser canvas; skip exclusive fullscreen control.
+	if OS.has_feature("web"):
+		return
 	if DisplayServer.get_name() != "headless":
 		var mode := DisplayServer.WINDOW_MODE_FULLSCREEN if values.fullscreen else DisplayServer.WINDOW_MODE_WINDOWED
 		if DisplayServer.window_get_mode() != mode:
