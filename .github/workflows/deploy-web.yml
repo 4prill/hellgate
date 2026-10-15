@@ -31,7 +31,9 @@ jobs:
       - name: install web export templates
         if: steps.godot-templates.outputs.cache-hit != 'true'
         run: |
-          python3 -m pip install --quiet remotezip
+          apt-get update -qq
+          DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends python3 python3-pip
+          python3 -m pip install --quiet --break-system-packages remotezip
           python3 - <<'PY'
           from pathlib import Path
           from remotezip import RemoteZip
