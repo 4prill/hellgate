@@ -12,16 +12,16 @@ config_version=5
 
 compatibility/default_parent_skeleton_in_mesh_instance_3d=true
 
-[audio]
-
-buses/default_bus_layout="res://default_bus_layout.tres"
-
 [application]
 
 config/name="HELLGATE"
 run/main_scene="res://main_ship.tscn"
 config/features=PackedStringArray("4.7", "Forward Plus")
 config/icon="res://icon.svg"
+
+[audio]
+
+buses/default_bus_layout="res://default_bus_layout.tres"
 
 [autoload]
 

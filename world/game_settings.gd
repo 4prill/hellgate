@@ -24,9 +24,13 @@ func save_settings(file_path: String = PATH) -> Error:
 	return config.save(file_path)
 
 func setup_buses() -> void:
+	# Web exports have been observed to lose the [audio] bus layout on save;
+	# recreate the mix buses at runtime so Ambience/Music/SFX volumes keep working.
 	for bus in ["Ambience", "Music", "SFX"]:
 		if AudioServer.get_bus_index(bus) < 0:
-			push_error("Missing audio bus in default_bus_layout.tres: %s" % bus)
+			AudioServer.add_bus()
+			AudioServer.set_bus_name(AudioServer.get_bus_count() - 1, bus)
+			AudioServer.set_bus_send(AudioServer.get_bus_index(bus), "Master")
 	var sfx := AudioServer.get_bus_index("SFX")
 	if sfx >= 0 and AudioServer.get_bus_effect_count(sfx) == 0:
 		var reverb := AudioEffectReverb.new()
