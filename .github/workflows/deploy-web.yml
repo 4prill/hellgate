@@ -32,23 +32,16 @@ jobs:
         if: steps.godot-templates.outputs.cache-hit != 'true'
         run: |
           apt-get update -qq
-          DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends python3 python3-pip
-          python3 -m pip install --quiet --break-system-packages remotezip
-          python3 - <<'PY'
-          from pathlib import Path
-          from remotezip import RemoteZip
-
-          url = "https://github.com/godotengine/godot/releases/download/4.7.2-stable/Godot_v4.7.2-stable_export_templates.tpz"
-          destination = Path.home() / ".local/share/godot/export_templates/4.7.2.stable"
-          destination.mkdir(parents=True, exist_ok=True)
-          templates = (
-              "templates/web_nothreads_debug.zip",
-              "templates/web_nothreads_release.zip",
-          )
-          with RemoteZip(url) as archive:
-              for name in templates:
-                  (destination / Path(name).name).write_bytes(archive.read(name))
-          PY
+          DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends curl unzip
+          destination="$HOME/.local/share/godot/export_templates/4.7.2.stable"
+          archive="$RUNNER_TEMP/godot-export-templates.tpz"
+          mkdir -p "$destination"
+          curl --location --fail --retry 3 --retry-delay 5 \
+            "https://github.com/godotengine/godot/releases/download/4.7.2-stable/Godot_v4.7.2-stable_export_templates.tpz" \
+            --output "$archive"
+          unzip -p "$archive" templates/web_nothreads_debug.zip > "$destination/web_nothreads_debug.zip"
+          unzip -p "$archive" templates/web_nothreads_release.zip > "$destination/web_nothreads_release.zip"
+          rm "$archive"
       - name: export web game
         run: |
           mkdir -p build/web
