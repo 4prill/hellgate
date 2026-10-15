@@ -1,0 +1,10 @@
+.godot/
+.mono/
+build/
+*.translation
+export.cfg
+export_credentials.cfg
+mono_crash.*.json
+*.tmp
+*.depren
+assets/3dassets/abandoned-spaceship.zip
