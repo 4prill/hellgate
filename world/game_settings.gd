@@ -26,11 +26,9 @@ func save_settings(file_path: String = PATH) -> Error:
 func setup_buses() -> void:
 	for bus in ["Ambience", "Music", "SFX"]:
 		if AudioServer.get_bus_index(bus) < 0:
-			AudioServer.add_bus()
-			AudioServer.set_bus_name(AudioServer.bus_count - 1, bus)
-			AudioServer.set_bus_send(AudioServer.bus_count - 1, "Master")
+			push_error("Missing audio bus in default_bus_layout.tres: %s" % bus)
 	var sfx := AudioServer.get_bus_index("SFX")
-	if AudioServer.get_bus_effect_count(sfx) == 0:
+	if sfx >= 0 and AudioServer.get_bus_effect_count(sfx) == 0:
 		var reverb := AudioEffectReverb.new()
 		reverb.room_size = 0.7
 		reverb.wet = 0.12
@@ -39,6 +37,8 @@ func setup_buses() -> void:
 func apply(game: Node) -> void:
 	for pair in [["Master", "master"], ["Ambience", "ambience"], ["Music", "music"], ["SFX", "effects"]]:
 		var index := AudioServer.get_bus_index(pair[0])
+		if index < 0:
+			continue
 		AudioServer.set_bus_volume_db(index, linear_to_db(maxf(0.0001, values[pair[1]])))
 		AudioServer.set_bus_mute(index, values[pair[1]] == 0.0)
 	game.player.sensitivity = values.sensitivity
